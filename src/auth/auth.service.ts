@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from "@nestjs/common"
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime';
-import { PrismaService } from "src/prisma/prisma.service"
+import { PrismaService } from "../prisma/prisma.service";
 import { SignUpDTO, SignInDTO } from "./dto"
 import * as argon from 'argon2'
 import { JwtService } from "@nestjs/jwt/dist";
@@ -46,21 +46,26 @@ export class AuthService{
 
     async signin(signinDTO: SignInDTO){
         try {
+            
             // find user by email
             const user = await this.prisma.user.findUnique({
                 where : {
                     email: signinDTO.email
                 },
             });
+
             // if user does not exist thor exception
             if(!user) return {statusCode: 403, message: "No Such User!", error: "Forbidden"}
+
             // else compare password
             const passMatch = await argon.verify(user.hash, signinDTO.password);
+
             // if password is incorrect, throw exception
-            // if(!passMatch) return {statusCode: 403, message: "Incorrect Password", error: "Forbidden"}
             if(!passMatch) return  {statusCode: 403, message: "Incorrect Password", error: "Forbidden"}
+
             // else return a token
             return {Status: "Success", access_token: await this.signToken(user.id, user.email)};
+
         } catch (error) {
             if(error instanceof PrismaClientKnownRequestError ){
                 if(error.code === "P1001") throw new ForbiddenException("Please check database server connection")
@@ -79,3 +84,5 @@ export class AuthService{
     })
    }
 }
+
+// "test:deploy": prisma:test:deploy",
